@@ -1,3 +1,16 @@
-[gd_scene format=3 uid="uid://byxden05byt2t"]
+[gd_scene load_steps=3 format=3 uid="uid://byxden05byt2t"]
+
+[ext_resource type="Script" path="res://ShaderInvoker.gd" id="1_6gm8s"]
+[ext_resource type="Script" path="res://DisplayImage.gd" id="2_oxyxw"]
 
 [node name="Main" type="Node3D"]
+
+[node name="Node" type="Node" parent="."]
+script = ExtResource("1_6gm8s")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+
+[node name="TracerOutput" type="TextureRect" parent="Camera3D"]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("2_oxyxw")
