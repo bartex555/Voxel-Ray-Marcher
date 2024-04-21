@@ -23,7 +23,6 @@ func _ready():
 	
 func _process(delta: float) -> void:
 	render(delta)
-	print(delta)
 
 func setup_compute():
 	

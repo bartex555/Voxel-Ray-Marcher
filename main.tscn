@@ -1,16 +1,17 @@
 [gd_scene load_steps=3 format=3 uid="uid://byxden05byt2t"]
 
-[ext_resource type="Script" path="res://ShaderInvoker.gd" id="1_6gm8s"]
-[ext_resource type="Script" path="res://DisplayImage.gd" id="2_oxyxw"]
+[ext_resource type="Script" path="res://ShaderInvoker.cs" id="1_j5eyt"]
+[ext_resource type="Script" path="res://TracerOutput.cs" id="2_v2y0b"]
 
 [node name="Main" type="Node3D"]
 
-[node name="Node" type="Node" parent="."]
-script = ExtResource("1_6gm8s")
+[node name="ShaderInvoker" type="Node" parent="." node_paths=PackedStringArray("texture_rect")]
+script = ExtResource("1_j5eyt")
+texture_rect = NodePath("../Camera3D/TracerOutput")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 
 [node name="TracerOutput" type="TextureRect" parent="Camera3D"]
 offset_right = 40.0
 offset_bottom = 40.0
-script = ExtResource("2_oxyxw")
+script = ExtResource("2_v2y0b")
