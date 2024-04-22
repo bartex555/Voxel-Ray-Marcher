@@ -1,12 +1,12 @@
 [gd_scene load_steps=3 format=3 uid="uid://byxden05byt2t"]
 
-[ext_resource type="Script" path="res://ShaderInvoker.cs" id="1_j5eyt"]
-[ext_resource type="Script" path="res://TracerOutput.cs" id="2_v2y0b"]
+[ext_resource type="Script" path="res://ShaderInvoker.cs" id="1_eutcl"]
+[ext_resource type="Script" path="res://TracerOutput.cs" id="2_utnkj"]
 
 [node name="Main" type="Node3D"]
 
 [node name="ShaderInvoker" type="Node" parent="." node_paths=PackedStringArray("texture_rect")]
-script = ExtResource("1_j5eyt")
+script = ExtResource("1_eutcl")
 texture_rect = NodePath("../Camera3D/TracerOutput")
 
 [node name="Camera3D" type="Camera3D" parent="."]
@@ -14,4 +14,4 @@ texture_rect = NodePath("../Camera3D/TracerOutput")
 [node name="TracerOutput" type="TextureRect" parent="Camera3D"]
 offset_right = 40.0
 offset_bottom = 40.0
-script = ExtResource("2_v2y0b")
+script = ExtResource("2_utnkj")

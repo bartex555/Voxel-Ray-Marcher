@@ -17,7 +17,7 @@ void main(){
     vec4 pixel = vec4(0.0,0.0,0.0,1.0);
     vec3 color = vec3(sin(params.time)* sin(params.time),cos(params.time) * cos(params.time),(sin(params.time) + 1) / 2);
     ivec2 image_size = imageSize(rendered_image);
-    // Cords in range [-1,1]
+    //Cords in range [-1,1]
     vec2 uv = vec2((gl_GlobalInvocationID.xy) / vec2(image_size) * 2 - 1);
     float aspect_ratio = float(image_size.x) / float(image_size.y);
     uv.x *= aspect_ratio;

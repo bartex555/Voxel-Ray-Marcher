@@ -33,11 +33,11 @@ public partial class ShaderInvoker : Node
 
     public override void _Process(double delta)
     {
-		framePacing.Restart();
+		//framePacing.Restart();
 		UpdateCompute();
 		Render((float)delta);
-		framePacing.Stop();
-		GD.Print(framePacing.ElapsedMilliseconds + "ms");
+		//framePacing.Stop();
+		GD.Print(delta);
     }
 
 
@@ -77,9 +77,10 @@ public partial class ShaderInvoker : Node
 		};
 		parametersUniform.AddId(parametersBuffer);
 
-
+		
 		bindings = new  Array<RDUniform> {outputTextureUniform,parametersUniform};
 		uniform_set = rd.UniformSetCreate(bindings,shader,0);
+		
 	}
 
 	void UpdateCompute(){
