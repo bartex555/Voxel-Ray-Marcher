@@ -6,7 +6,7 @@ using System.Diagnostics;
 public partial class ShaderInvoker : Node
 {
 	Vector2I image_size = new();
-	RenderingDevice rd = RenderingServer.CreateLocalRenderingDevice();
+	RenderingDevice rd;
 	Rid shader;
 	Rid pipeline;
 	Rid output_texture;
@@ -21,6 +21,8 @@ public partial class ShaderInvoker : Node
 	[Export] public Camera3D camera;
     public override void _Ready()
     {
+		rd = RenderingServer.GetRenderingDevice();
+		//TODO - make it dynamic
 		image_size.X = (int)ProjectSettings.GetSetting("display/window/size/viewport_width",8);
 		image_size.Y = (int)ProjectSettings.GetSetting("display/window/size/viewport_height",8);
 
@@ -29,6 +31,7 @@ public partial class ShaderInvoker : Node
 
 		SetupCompute();
 		Render();
+	
     }
 
     public override void _Process(double delta)
@@ -73,7 +76,7 @@ public partial class ShaderInvoker : Node
 		Width = (uint)image_size.X,
 		Height = (uint)image_size.Y,
 		Format = RenderingDevice.DataFormat.R32G32B32A32Sfloat,
-		UsageBits = RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanCopyFromBit
+		UsageBits = RenderingDevice.TextureUsageBits.CanUpdateBit | RenderingDevice.TextureUsageBits.StorageBit | RenderingDevice.TextureUsageBits.CanCopyFromBit | RenderingDevice.TextureUsageBits.SamplingBit | RenderingDevice.TextureUsageBits.ColorAttachmentBit
 		};
 		var view = new RDTextureView();
 		var outputImage = Image.Create(image_size.X,image_size.Y,false,Image.Format.Rgbaf);
@@ -82,6 +85,9 @@ public partial class ShaderInvoker : Node
 		outputTextureUniform.UniformType = RenderingDevice.UniformType.Image;
 		outputTextureUniform.Binding = 0;
 		outputTextureUniform.AddId(output_texture);
+		//This is where the magic happens, the rd needs to be global for this to work
+		texture_rect.setRID(output_texture);
+
 		//End
 
 		//Float buffer
@@ -160,11 +166,13 @@ public partial class ShaderInvoker : Node
 		rd.Submit();
 
 		//Forcing the CPU to wait for the GPU
+		//TODO - make it independent, too lazy for that now
 		rd.Sync();
 
+		//DEPRECATED LETSSSS GOOOOOOOO
 		//The biggest bottleneck in the whole project
 		//Maybe stitching several rextures in a pixel shader would work better
-		byte[] byteData = rd.TextureGetData(output_texture,0);
-		texture_rect.setData(byteData);
+		//byte[] byteData = rd.TextureGetData(output_texture,0);
+		//texture_rect.setData(byteData);
 	}
 }
