@@ -17,8 +17,8 @@ public partial class ShaderInvoker : Node
 	Array<RDUniform> bindings;
 
 
-	[Export]
-	public TracerOutput texture_rect;
+	[Export] public TracerOutput texture_rect;
+	[Export] public Camera3D camera;
     public override void _Ready()
     {
 		image_size.X = (int)ProjectSettings.GetSetting("display/window/size/viewport_width",8);
@@ -33,13 +33,31 @@ public partial class ShaderInvoker : Node
 
     public override void _Process(double delta)
     {
-		//framePacing.Restart();
+		framePacing.Restart();
 		UpdateCompute();
 		Render((float)delta);
-		//framePacing.Stop();
-		GD.Print(delta);
+		framePacing.Stop();
+		GD.Print(framePacing.ElapsedMilliseconds);
     }
 
+	byte[] CameraToBytes(Transform3D t,Projection p){
+		Basis basis = t.Basis;
+		Vector3 origin = t.Origin;
+		float[] unencoded = new float[]{
+			basis.X.X, basis.X.Y, basis.X.Z, 1.0f,
+			basis.Y.X, basis.Y.Y, basis.Y.Z, 1.0f,
+			basis.Z.X, basis.Z.Y, basis.Z.Z, 1.0f,
+			origin.X, origin.Y, origin.Z, 1.0f,
+			p.X.X, p.X.Y, p.X.Z, p.X.W,
+			p.Y.X, p.Y.Y, p.Y.Z, p.Y.W,
+			p.Z.X, p.Z.Y, p.Z.Z, p.Z.W,
+			p.W.X, p.W.Y, p.W.Z, p.W.W
+		};
+		byte[] bytes = new byte[unencoded.Length * sizeof(float)];
+		Buffer.BlockCopy(unencoded, 0, bytes,0,bytes.Length);
+		return bytes;
+	}
+	
 
     void SetupCompute(){
 		//Compiling and setting up the shader
@@ -47,6 +65,7 @@ public partial class ShaderInvoker : Node
 		var shaderBytecode = shaderFile.GetSpirV();
 		shader = rd.ShaderCreateFromSpirV(shaderBytecode);
 		pipeline = rd.ComputePipelineCreate(shader);
+		//End
 
 		//Output Texture Buffer
 		var fmt = new RDTextureFormat
@@ -63,6 +82,7 @@ public partial class ShaderInvoker : Node
 		outputTextureUniform.UniformType = RenderingDevice.UniformType.Image;
 		outputTextureUniform.Binding = 0;
 		outputTextureUniform.AddId(output_texture);
+		//End
 
 		//Float buffer
 		var parameters = new float[] {
@@ -76,9 +96,20 @@ public partial class ShaderInvoker : Node
 			Binding = 1,
 		};
 		parametersUniform.AddId(parametersBuffer);
+		//End
 
-		
-		bindings = new  Array<RDUniform> {outputTextureUniform,parametersUniform};
+		//Camera buffer
+		byte[] cameraMatrices = CameraToBytes(camera.GlobalTransform,camera.GetCameraProjection());
+		Rid cameraBuffer = rd.StorageBufferCreate((uint)cameraMatrices.Length,cameraMatrices);
+		RDUniform cameraUniform = new RDUniform{
+			UniformType = RenderingDevice.UniformType.StorageBuffer,
+			Binding = 2,
+		};
+		cameraUniform.AddId(cameraBuffer);
+		//End
+
+
+		bindings = new  Array<RDUniform> {outputTextureUniform,parametersUniform,cameraUniform};
 		uniform_set = rd.UniformSetCreate(bindings,shader,0);
 		
 	}
@@ -95,9 +126,21 @@ public partial class ShaderInvoker : Node
 			UniformType = RenderingDevice.UniformType.StorageBuffer,
 			Binding = 1,
 		};
-
 		parametersUniform.AddId(parametersBuffer);
+		//End
+
+		//Camera buffer
+		byte[] cameraMatrices = CameraToBytes(camera.GlobalTransform,camera.GetCameraProjection());
+		Rid cameraBuffer = rd.StorageBufferCreate((uint)cameraMatrices.Length,cameraMatrices);
+		RDUniform cameraUniform = new RDUniform{
+			UniformType = RenderingDevice.UniformType.StorageBuffer,
+			Binding = 2,
+		};
+		cameraUniform.AddId(cameraBuffer);
+		//End
+
 		bindings[1] = parametersUniform;
+		bindings[2] = cameraUniform;
 		uniform_set = rd.UniformSetCreate(bindings,shader,0);
 	}
 
@@ -116,9 +159,12 @@ public partial class ShaderInvoker : Node
 
 		rd.Submit();
 
+		//Forcing the CPU to wait for the GPU
 		rd.Sync();
 
-		var byteData = rd.TextureGetData(output_texture,0);
+		//The biggest bottleneck in the whole project
+		//Maybe stitching several rextures in a pixel shader would work better
+		byte[] byteData = rd.TextureGetData(output_texture,0);
 		texture_rect.setData(byteData);
 	}
 }

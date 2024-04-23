@@ -1,17 +1,40 @@
-[gd_scene load_steps=3 format=3 uid="uid://byxden05byt2t"]
+[gd_scene load_steps=4 format=3 uid="uid://byxden05byt2t"]
 
 [ext_resource type="Script" path="res://ShaderInvoker.cs" id="1_eutcl"]
+[ext_resource type="Script" path="res://Player.gd" id="2_s863n"]
 [ext_resource type="Script" path="res://TracerOutput.cs" id="2_utnkj"]
 
 [node name="Main" type="Node3D"]
 
-[node name="ShaderInvoker" type="Node" parent="." node_paths=PackedStringArray("texture_rect")]
+[node name="ShaderInvoker" type="Node" parent="." node_paths=PackedStringArray("texture_rect", "camera")]
 script = ExtResource("1_eutcl")
-texture_rect = NodePath("../Camera3D/TracerOutput")
+texture_rect = NodePath("../Player/Camera3D/Control/TracerOutput")
+camera = NodePath("../Player/Camera3D")
 
-[node name="Camera3D" type="Camera3D" parent="."]
+[node name="Player" type="CharacterBody3D" parent="." node_paths=PackedStringArray("Head")]
+motion_mode = 1
+script = ExtResource("2_s863n")
+Head = NodePath("Camera3D")
 
-[node name="TracerOutput" type="TextureRect" parent="Camera3D"]
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="Camera3D" type="Camera3D" parent="Player"]
+current = true
+
+[node name="Control" type="Control" parent="Player/Camera3D"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TracerOutput" type="TextureRect" parent="Player/Camera3D/Control"]
+custom_minimum_size = Vector2(160, 90)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
 script = ExtResource("2_utnkj")
