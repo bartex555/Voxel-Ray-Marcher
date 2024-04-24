@@ -16,7 +16,8 @@ public partial class ShaderInvoker : Node
 	Stopwatch framePacing = new Stopwatch();
 	Array<RDUniform> bindings;
 
-
+	//TEMP:
+	byte[,,] voxels = new byte[512,512,512];
 	[Export] public TracerOutput texture_rect;
 	[Export] public Camera3D camera;
     public override void _Ready()
@@ -29,18 +30,21 @@ public partial class ShaderInvoker : Node
 		texture_rect.image_size = image_size;
 		texture_rect.textureInit();
 
+		
 		SetupCompute();
 		Render();
-	
+		GD.Print(camera.GetCameraProjection());
     }
 
     public override void _Process(double delta)
     {
+		
 		framePacing.Restart();
 		UpdateCompute();
 		Render((float)delta);
 		framePacing.Stop();
 		GD.Print(framePacing.ElapsedMilliseconds);
+		
     }
 
 	byte[] CameraToBytes(Transform3D t,Projection p){
@@ -61,7 +65,49 @@ public partial class ShaderInvoker : Node
 		return bytes;
 	}
 	
-
+	//Generating Block buffer with LOD (currently 512 voxels in each direction)
+	/*
+	current direction x -> y -> z
+				2 3	   6 7
+				0 1	   4 5
+	Reference for AND operations:
+		7  128
+		6  64
+		5  32
+		4  16
+		3  8
+		2  4
+		1  2
+		0  1
+	*/
+	//LOD scrapped for now
+	byte[] PassBlockLOD(byte[,,] voxelsToPass){
+		//TEMP AND VERY BAD
+		int size = 512;
+		int sizeCubed = voxelsToPass.Length;
+		/*
+		int LOD1_Size = size / 8;
+		int LOD1_SizeCubed = sizeCubed / 512;
+		int LOD2_Size = LOD1_Size / 8;
+		int LOD2_SizeCubed = LOD1_SizeCubed / 512;
+		int LOD3_Size = LOD2_Size / 8;
+		int LOD3_SizeCubed = LOD2_SizeCubed / 512;
+		*/
+		
+		byte[] finishedBytes = new byte[sizeCubed/* + LOD1_SizeCubed + LOD2_SizeCubed + LOD3_SizeCubed*/];
+		for (int x = 0;x < size;x+=2) for (int y = 0;y < size; y+=2) for (int z = 0;z < size; z+=2){
+			finishedBytes[size * x + size * y + z] = voxelsToPass[x,y,z]; //0
+			finishedBytes[size * x + size * y + z + 1] = voxelsToPass[x+1,y,z]; //1
+			finishedBytes[size * x + size * y + z + 2] = voxelsToPass[x,y+1,z]; //2
+			finishedBytes[size * x + size * y + z + 3] = voxelsToPass[x+1,y+1,z]; //3
+			finishedBytes[size * x + size * y + z + 4] = voxelsToPass[x,y,z+1]; //4
+			finishedBytes[size * x + size * y + z + 5] = voxelsToPass[x+1,y,z+1]; //5
+			finishedBytes[size * x + size * y + z + 6] = voxelsToPass[x,y+1,z+1]; //6
+			finishedBytes[size * x + size * y + z + 7] = voxelsToPass[x+1,y+1,z+1]; //7
+		}
+		return finishedBytes;
+	}
+	
     void SetupCompute(){
 		//Compiling and setting up the shader
 		var shaderFile = GD.Load<RDShaderFile>("res://Ray-Marcher.glsl");
@@ -114,8 +160,18 @@ public partial class ShaderInvoker : Node
 		cameraUniform.AddId(cameraBuffer);
 		//End
 
+		//Voxel Buffer
+		var vox = PassBlockLOD(voxels);
+		var voxBuffer = rd.StorageBufferCreate((uint)vox.Length,vox);
+		var voxUniform = new RDUniform{
+			UniformType = RenderingDevice.UniformType.StorageBuffer,
+			Binding = 3,
+		};
+		voxUniform.AddId(voxBuffer);
+		//End
 
-		bindings = new  Array<RDUniform> {outputTextureUniform,parametersUniform,cameraUniform};
+
+		bindings = new  Array<RDUniform> {outputTextureUniform,parametersUniform,cameraUniform,voxUniform};
 		uniform_set = rd.UniformSetCreate(bindings,shader,0);
 		
 	}
