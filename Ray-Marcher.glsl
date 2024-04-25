@@ -138,7 +138,8 @@ void main(){
     vec2 uv = vec2((gl_GlobalInvocationID.xy) / vec2(image_size) * 2 - 1);
     float aspect_ratio = float(image_size.x) / float(image_size.y);
     uv.x *= aspect_ratio;
-    
+    uv.y *= -1;
+
     Ray ray = constructFromCamera(uv);
     ray = traceToGrid(ray);
     if (ray.energy <= 0){
